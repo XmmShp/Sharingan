@@ -1,6 +1,8 @@
 # Sharingan
 
-基于 [glad](https://github.com/Dav1dde/glad)，[glfw](https://github.com/glfw/glfw) 与 [imgui](https://github.com/ocornut/imgui) 的 UI 库
+一个轻量，高度封装，易于使用的 C++ GUI 库。
+
+基于 [glad](https://github.com/Dav1dde/glad)，[glfw](https://github.com/glfw/glfw) 与 [imgui](https://github.com/ocornut/imgui)。
 
 ## 为什么要写这个库
 
@@ -9,14 +11,16 @@
 ## 设计亮点
 
 1. 毫无门槛的多窗口：可以轻松的创建多个窗口，不需要繁琐的设置。
-2. 更舒适的 UI 开发体验：将原本 PO 的 Dear ImGui 封装为各种 OO 的组件，更符合现代开发习惯。
+2. 更舒适的 UI 开发体验：将原本 PO 的 Dear ImGui 封装为各种 OO 的组件，更符合直觉与现代开发习惯。
 3. 更好的状态管理：每个 `ImGuiDialog` (ImGui 窗体)都有自己的状态，并且可以很方便的通过状态来控制组件的行为。
 4. 几乎可以称为 **响应式** 的窗体设计：所有组件都可以通过自身的状态来控制组件的渲染。
 5. 良好的接口设计：用户可以通过继承 `ImGuiDialogComponent<TParam>` 来实现自己的复合组件，更可以实现 `IDrawableOject` 来方便的将现有的渲染方案与 `Sharingan` 集成。
+6. 堪比 C# 的使用体验：例如变量绑定可以使用 `[](auto state)->auto&{return state->Value;}` 进行绑定，使用上几乎可以比肩 C# 的 `state=>state.Value`
+7. 安全谨慎的内存管理：遵循严格的 RAII 策略，使用 shared_ptr 保证内存安全。
 
 ## 为什么要叫 Sharingan
 
-Sharingan 来自 “万花筒写轮眼”，希望这个库能让人沉浸在 UI 的幻术中，因此就叫了这个名字
+Sharingan 来自 “万花筒写轮眼”，这个库能让人沉浸在 GUI 的幻术中，因此就叫了这个名字
 
 ## 快速开始
 
