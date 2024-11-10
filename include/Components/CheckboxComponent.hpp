@@ -4,29 +4,29 @@
 #include "ImGuiDialogComponent.h"
 #include "imgui.h"
 
-template <typename TParam>
-class CheckboxComponent : public ImGuiDialogComponent<TParam>
+template <typename TState>
+class CheckboxComponent : public ImGuiDialogComponent<TState>
 {
-    using typename ImGuiDialogComponent<TParam>::StringProvider;
-    using Binder = typename ImGuiDialogComponent<TParam>::template ParamBinder<bool>;
+    using typename ImGuiDialogComponent<TState>::StringProvider;
+    using Binder = typename ImGuiDialogComponent<TState>::template StateBinder<bool>;
 
   public:
-    explicit CheckboxComponent(std::shared_ptr<TParam> param, const std::string &title, Binder binder)
-        : CheckboxComponent(param, [title](auto _) { return title; }, binder)
+    explicit CheckboxComponent(std::shared_ptr<TState> state, const std::string &title, Binder binder)
+        : CheckboxComponent(state, [title](auto _) { return title; }, binder)
     {
     }
 
-    explicit CheckboxComponent(std::shared_ptr<TParam> param, StringProvider title, Binder binder)
-        : _value(&binder(param)), _title(title), _param(param)
+    explicit CheckboxComponent(std::shared_ptr<TState> state, StringProvider title, Binder binder)
+        : _value(&binder(state)), _title(title), _state(state)
     {
     }
 
-    void Render() override { ImGui::Checkbox(_title(_param).c_str(), _value); }
+    void Render() override { ImGui::Checkbox(_title(_state).c_str(), _value); }
 
   private:
     bool *_value;
     StringProvider _title;
-    std::shared_ptr<TParam> _param;
+    std::shared_ptr<TState> _state;
 };
 
 #endif // CHECKBOXCOMPONENT_H

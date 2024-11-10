@@ -9,46 +9,44 @@
 #include <utility>
 #include <vector>
 
-class DefaultParam
+class DefaultState
 {
-  public:
-    std::string Title = " ";
 };
 
-template <typename TParam = DefaultParam>
+template <typename TState = DefaultState>
 class ImGuiDialog final : public IDrawable
 {
-    using StringProvider = std::function<std::string(std::shared_ptr<TParam>)>;
+    using StringProvider = std::function<std::string(std::shared_ptr<TState>)>;
 
   public:
-    std::shared_ptr<TParam> GetParam() { return _param; }
+    std::shared_ptr<TState> GetState() { return _state; }
     explicit ImGuiDialog(const std::string &title) : ImGuiDialog([title](auto _) { return title; }) {}
-    explicit ImGuiDialog(StringProvider title) : ImGuiDialog(title, std::make_shared<TParam>()) {}
-    explicit ImGuiDialog(StringProvider title, const std::shared_ptr<TParam> &param)
-        : _title(std::move(title)), _param(param)
+    explicit ImGuiDialog(StringProvider title) : ImGuiDialog(title, std::make_shared<TState>()) {}
+    explicit ImGuiDialog(StringProvider title, const std::shared_ptr<TState> &state)
+        : _title(std::move(title)), _state(state)
     {
     }
     template <template <typename> class TComponent, typename... Args>
     void Create(Args &&...args)
     {
-        Create<TComponent<TParam>>(_param, std::forward<Args>(args)...);
+        Create<TComponent<TState>>(_state, std::forward<Args>(args)...);
     }
-    void Add(const std::shared_ptr<ImGuiDialogComponent<TParam>> &component) { _components.emplace_back(component); }
-    void Remove(const std::shared_ptr<ImGuiDialogComponent<TParam>> &component) { std::erase(_components, component); }
+    void Add(const std::shared_ptr<ImGuiDialogComponent<TState>> &component) { _components.emplace_back(component); }
+    void Remove(const std::shared_ptr<ImGuiDialogComponent<TState>> &component) { std::erase(_components, component); }
     void Draw() override
     {
-        ImGui::Begin(_title(_param).c_str());
+        ImGui::Begin(_title(_state).c_str());
         for (const auto &component : _components) { component->Render(); }
         ImGui::End();
     }
 
   private:
     StringProvider _title;
-    std::shared_ptr<TParam> _param;
-    std::vector<std::shared_ptr<ImGuiDialogComponent<TParam>>> _components{};
+    std::shared_ptr<TState> _state;
+    std::vector<std::shared_ptr<ImGuiDialogComponent<TState>>> _components{};
 
     template <typename TComponent, typename... Args>
-        requires std::derived_from<TComponent, ImGuiDialogComponent<TParam>>
+        requires std::derived_from<TComponent, ImGuiDialogComponent<TState>>
     void Create(Args &&...args)
     {
         auto component = std::make_shared<TComponent>(std::forward<Args>(args)...);

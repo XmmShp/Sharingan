@@ -5,25 +5,25 @@
 
 #include <imgui.h>
 
-template <typename TParam>
-class TextComponent : public ImGuiDialogComponent<TParam>
+template <typename TState>
+class TextComponent : public ImGuiDialogComponent<TState>
 {
-    using typename ImGuiDialogComponent<TParam>::StringProvider;
+    using typename ImGuiDialogComponent<TState>::StringProvider;
 
   public:
-    explicit TextComponent(std::shared_ptr<TParam> param, const std::string &content)
-        : TextComponent(param, [content](auto _) { return content; })
+    explicit TextComponent(std::shared_ptr<TState> state, const std::string &content)
+        : TextComponent(state, [content](auto _) { return content; })
     {
     }
-    explicit TextComponent(std::shared_ptr<TParam> param, StringProvider contentProvider)
-        : _content(std::move(contentProvider)), _param(param)
+    explicit TextComponent(std::shared_ptr<TState> state, StringProvider contentProvider)
+        : _content(std::move(contentProvider)), _state(state)
     {
     }
-    void Render() override { ImGui::Text(_content(_param).c_str()); }
+    void Render() override { ImGui::Text(_content(_state).c_str()); }
 
   private:
     StringProvider _content;
-    std::shared_ptr<TParam> _param;
+    std::shared_ptr<TState> _state;
 };
 
 #endif // TEXTCOMPONENT_HPP
