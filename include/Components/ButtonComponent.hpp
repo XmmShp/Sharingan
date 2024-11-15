@@ -1,36 +1,31 @@
 #ifndef BUTTONCOMPONENT_HPP
 #define BUTTONCOMPONENT_HPP
 
-#include "ImGuiDialogComponent.h"
+#include "WindowComponent.hpp"
 #include <imgui.h>
+#include <string>
+#include <utility>
 
-template <typename TState>
-class ButtonComponent : public ImGuiDialogComponent<TState>
+namespace Sharingan
 {
-    using typename ImGuiDialogComponent<TState>::Callback;
-    using typename ImGuiDialogComponent<TState>::StringProvider;
+class ButtonComponent : public WindowComponent
+{
 
   public:
-    explicit ButtonComponent(std::shared_ptr<TState> state, const std::string &title, const Callback &callback = {})
-        : ButtonComponent(state, [title](auto _) { return std::string(title); }, callback)
+    explicit ButtonComponent(StringProvider title, Callback callback)
+        : _title(std::move(title)), _callback(std::move(callback))
     {
     }
-    explicit ButtonComponent(std::shared_ptr<TState> state, StringProvider title, Callback callback = {})
-        : _title(std::move(title)), _callback(callback), _state(state)
-    {
-    }
+
     void Render() override
     {
-        if (ImGui::Button(_title(_state).c_str()))
-        {
-            if (_callback) _callback(_state);
-        }
+        if (ImGui::Button(_title().c_str())) { _callback(); }
     }
 
   private:
     StringProvider _title;
     Callback _callback;
-    std::shared_ptr<TState> _state;
 };
+} // namespace Sharingan
 
 #endif // BUTTONCOMPONENT_HPP
