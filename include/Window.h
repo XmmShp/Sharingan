@@ -1,5 +1,5 @@
-#ifndef IMGUIDIALOG_HPP
-#define IMGUIDIALOG_HPP
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #include "Components/ImGuiDialogComponent.h"
 #include "IDrawable.h"
@@ -54,4 +54,4 @@ class ImGuiDialog final : public IDrawable
     }
 };
 
-#endif // IMGUIDIALOG_HPP
+#endif // WINDOW_H

@@ -2,27 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 
 project(Sharingan LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 11)
 
-add_library(Sharingan INTERFACE)
-target_include_directories(Sharingan INTERFACE "./include")
-
-# glad dependencies
-
-add_library(glad STATIC "./dependencies/glad/src/glad.c")
-target_include_directories(glad PUBLIC "./dependencies/glad/include")
-target_link_libraries(Sharingan INTERFACE glad)
-
-# glfw dependencies
-
-add_subdirectory("./dependencies/glfw")
-
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_DOCS OFF)
-set(GLFW_INSTALL OFF)
-
-target_link_libraries(Sharingan INTERFACE glfw)
+add_library(Sharingan SHARED)
+target_include_directories(Sharingan PUBLIC "./include")
 
 # ImGui dependencies
 
