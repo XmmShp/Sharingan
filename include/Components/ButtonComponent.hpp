@@ -9,8 +9,6 @@
 
 namespace Sharingan
 {
-class ButtonComponent : public WindowComponent
-{
 template<typename TState>
 class ButtonComponent : public WindowComponent<TState>
 {
