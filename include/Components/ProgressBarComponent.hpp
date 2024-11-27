@@ -5,7 +5,6 @@
 #include <imgui.h>
 #include <string>
 #include <functional>
-#include <algorithm>
 #include <optional>
 
 namespace Sharingan
@@ -15,52 +14,44 @@ class ProgressBarComponent : public WindowComponent<TState>
 {
 public:
     ProgressBarComponent() 
-        : _label("")
-        , _fraction(0.0f)
-        , _size{-FLT_MIN, 0}
-        , _visible([](const TState&) { return true; })
-    {
-    }
-
-    explicit ProgressBarComponent(StringProvider label, float fraction = 0.0f,
-                                const ImVec2& size = ImVec2(-FLT_MIN, 0))
-        : _label(std::move(label))
-        , _fraction(fraction)
-        , _size(size)
-        , _visible([](const TState&) { return true; })
+        : _fraction(0.0f)
+        , _size{ImVec2(-FLT_MIN, 0)}
     {
     }
 
     void Render() override
     {
-        if (_visible(this->_state)) {
+        if (this->IsVisible()) {
             ImGui::PushID(this);
-            const std::string& label = _label(this->_state);
-            ImGui::ProgressBar(_fraction, _size, _overlayText.has_value() ? _overlayText.value()(this->_state).c_str() : nullptr);
+            const std::string& label = this->GetLabel();
+            ImGui::ProgressBar(
+                _fraction(this->_state), 
+                _size(this->_state), 
+                _overlayText.has_value() ? _overlayText.value()(this->_state).c_str() : nullptr
+            );
             ImGui::PopID();
         }
     }
 
-    // 设置标签
-    ProgressBarComponent& SetLabel(const std::string& label) {
-        _label = StringProvider(label);
-        return *this;
-    }
-
-    ProgressBarComponent& SetLabel(std::function<std::string(const TState&)> stateFunc) {
-        _label = StringProvider(stateFunc);
-        return *this;
-    }
-
     // 设置进度 (0.0-1.0)
     ProgressBarComponent& SetFraction(float fraction) {
-        _fraction = std::clamp(fraction, 0.0f, 1.0f);
+        _fraction = ValueProvider<float>(fraction);
+        return *this;
+    }
+
+    ProgressBarComponent& SetFraction(std::function<float(const TState&)> stateFunc) {
+        _fraction = ValueProvider<float>(stateFunc);
         return *this;
     }
 
     // 设置大小
     ProgressBarComponent& SetSize(const ImVec2& size) {
-        _size = size;
+        _size = ValueProvider<ImVec2>(size);
+        return *this;
+    }
+
+    ProgressBarComponent& SetSize(std::function<ImVec2(const TState&)> stateFunc) {
+        _size = ValueProvider<ImVec2>(stateFunc);
         return *this;
     }
 
@@ -75,20 +66,9 @@ public:
         return *this;
     }
 
-    // 设置可见性
-    ProgressBarComponent& SetVisible(std::function<bool(const TState&)> stateFunc) {
-        _visible = ValueProvider<bool>(stateFunc);
-        return *this;
-    }
-
-    // 获取当前进度
-    float GetFraction() const { return _fraction; }
-
 private:
-    StringProvider _label;
-    float _fraction;
-    ImVec2 _size;
-    ValueProvider<bool> _visible;
+    ValueProvider<float> _fraction;
+    ValueProvider<ImVec2> _size;
     std::optional<StringProvider> _overlayText;
 };
 

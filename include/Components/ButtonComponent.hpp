@@ -13,36 +13,27 @@ template<typename TState>
 class ButtonComponent : public WindowComponent<TState>
 {
 public:
+    using OnClickCallback = std::function<void(ButtonComponent&)>;
+
     // 默认构造函数
     ButtonComponent() = default;
 
     void Render() override
     {
-        if (ImGui::Button(_title(this->_state).c_str())) { 
-            if (_callback) _callback(); 
+        if (this->IsVisible()) {
+            if (ImGui::Button(this->GetLabel().c_str())) { 
+                if (_callback) _callback(*this); 
+            }
         }
     }
 
-    // 支持直接值
-    ButtonComponent& SetTitle(const std::string& title) {
-        _title = StringProvider(title);
-        return *this;
-    }
-
-    // 支持状态感知lambda
-    ButtonComponent& SetTitle(std::function<std::string(const TState&)> stateFunc) {
-        _title = StringProvider(stateFunc);
-        return *this;
-    }
-
-    ButtonComponent& SetCallback(Callback callback) {
+    ButtonComponent& SetCallback(OnClickCallback callback) {
         _callback = std::move(callback);
         return *this;
     }
 
 private:
-    StringProvider _title{""};  // 默认空字符串
-    Callback _callback;
+    OnClickCallback _callback;
 };
 
 } // namespace Sharingan

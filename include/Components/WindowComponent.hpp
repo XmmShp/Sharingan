@@ -42,14 +42,43 @@ template<typename TState>
 class WindowComponent
 {
 public:
+    WindowComponent() : _label(""), _visible(true) {}
     virtual ~WindowComponent() = default;
     virtual void Render() = 0;
     
     void SetState(const TState* state) { _state = state; }
     const TState* GetState() const { return _state; }
 
+    // 设置标签
+    WindowComponent& SetLabel(const std::string& label) {
+        _label = StringProvider(label);
+        return *this;
+    }
+
+    WindowComponent& SetLabel(std::function<std::string(const TState&)> stateFunc) {
+        _label = StringProvider(stateFunc);
+        return *this;
+    }
+
+    // 设置可见性
+
+    WindowComponent& SetVisible(std::function<bool(const TState&)> stateFunc) {
+        _visible = ValueProvider<bool>(stateFunc);
+        return *this;
+    }
+
 protected:
     const TState* _state = nullptr;
+    StringProvider _label;
+    ValueProvider<bool> _visible;
+
+    bool IsVisible() const {
+        return _visible(this->_state);
+    }
+
+    std::string GetLabel() const {
+        return _label(this->_state);
+    }
 };
 
 } // namespace Sharingan

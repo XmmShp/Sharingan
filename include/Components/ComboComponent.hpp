@@ -7,6 +7,8 @@
 #include <vector>
 #include <utility>
 #include <functional>
+#include <optional>
+#include <algorithm>
 
 namespace Sharingan
 {
@@ -14,12 +16,14 @@ template<typename TState>
 class ComboComponent : public WindowComponent<TState>
 {
 public:
-    ComboComponent() : _label(""), _currentItem(0), _onSelectCallback(nullptr), _visible(true)
+    using OnSelectCallback = std::function<void(ComboComponent&, int)>;
+
+    ComboComponent() : _label(""), _onSelectCallback(nullptr), _visible(true)
     {
     }
 
     explicit ComboComponent(StringProvider label, std::vector<std::string> items = {}, 
-                          std::function<void(int)> onSelectCallback = nullptr)
+                          OnSelectCallback onSelectCallback = nullptr)
         : _label(std::move(label))
         , _items(std::move(items))
         , _onSelectCallback(std::move(onSelectCallback))
@@ -28,14 +32,19 @@ public:
 
     void Render() override
     {
+        if (!_valueBinder || !_items.has_value()) return;
         if (_visible(this->_state)) {
-            if (ImGui::BeginCombo(_label(this->_state).c_str(), _items[_currentItem].c_str())) {
-                for (int i = 0; i < _items.size(); i++) {
-                    const bool isSelected = (i == _currentItem);
-                    if (ImGui::Selectable(_items[i].c_str(), isSelected)) {
-                        _currentItem = i;
+            int& currentItem = _valueBinder(*const_cast<TState*>(this->_state));
+            const auto& items = _items.value()(this->_state);
+            currentItem = std::clamp(currentItem, 0, static_cast<int>(items.size()) - 1);
+            
+            if (ImGui::BeginCombo(_label(this->_state).c_str(), items[currentItem].c_str())) {
+                for (int i = 0; i < items.size(); i++) {
+                    const bool isSelected = (i == currentItem);
+                    if (ImGui::Selectable(items[i].c_str(), isSelected)) {
+                        currentItem = i;
                         if (_onSelectCallback) {
-                            _onSelectCallback(_currentItem);
+                            _onSelectCallback(*this, currentItem);
                         }
                     }
                     if (isSelected) {
@@ -60,21 +69,23 @@ public:
 
     // 设置选项
     ComboComponent& SetItems(const std::vector<std::string>& items) {
-        _items = items;
-        _currentItem = std::min(_currentItem, static_cast<int>(_items.size()) - 1);
+        _items = ValueProvider<std::vector<std::string>>(items);
         return *this;
     }
 
-    // 设置当前选中项
-    ComboComponent& SetCurrentItem(int index) {
-        if (index >= 0 && index < _items.size()) {
-            _currentItem = index;
-        }
+    ComboComponent& SetItems(std::function<std::vector<std::string>(const TState&)> stateFunc) {
+        _items = ValueProvider<std::vector<std::string>>(stateFunc);
+        return *this;
+    }
+
+    // 设置值路由
+    ComboComponent& SetValueRoute(std::function<int&(TState&)> valueBinder) {
+        _valueBinder = std::move(valueBinder);
         return *this;
     }
 
     // 设置选择回调
-    ComboComponent& SetOnSelectCallback(std::function<void(int)> callback) {
+    ComboComponent& SetOnSelectCallback(OnSelectCallback callback) {
         _onSelectCallback = std::move(callback);
         return *this;
     }
@@ -85,19 +96,19 @@ public:
         return *this;
     }
 
-    // 获取当前选中项索引
-    int GetCurrentItem() const { return _currentItem; }
-
     // 获取当前选中项文本
     std::string GetCurrentItemText() const { 
-        return _currentItem >= 0 && _currentItem < _items.size() ? _items[_currentItem] : ""; 
+        if (!_valueBinder || !_items.has_value()) return "";
+        const int currentItem = _valueBinder(*static_cast<const TState*>(this->_state));
+        const auto& items = _items.value()(*this->_state);
+        return currentItem >= 0 && currentItem < items.size() ? items[currentItem] : ""; 
     }
 
 private:
     StringProvider _label;
-    std::vector<std::string> _items;
-    int _currentItem{0};
-    std::function<void(int)> _onSelectCallback;
+    OnSelectCallback _onSelectCallback;
+    std::function<int&(TState&)> _valueBinder;
+    std::optional<ValueProvider<std::vector<std::string>>> _items;
     ValueProvider<bool> _visible{true};
 };
 

@@ -30,6 +30,17 @@ public:
         return componentRef;
     }
 
+    template<typename TComponent>
+    TComponent& Add(const TComponent& component) {
+        static_assert(std::is_base_of_v<WindowComponent<TState>, TComponent>, 
+            "Component must inherit from WindowComponent<TState>");
+        auto componentCopy = std::unique_ptr<TComponent>(new TComponent(component));
+        componentCopy->SetState(_state.get());
+        auto& componentRef = *componentCopy;
+        _components.push_back(std::move(componentCopy));
+        return componentRef;
+    }
+
     void Draw()
     {
         ImGui::Begin(_title.c_str(), nullptr, _flags);

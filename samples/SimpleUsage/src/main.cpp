@@ -106,14 +106,14 @@ int main(int, char **)
 
     // 添加按钮组件
     mainWindow.AddComponent<Sharingan::ButtonComponent>()
-        .SetTitle("Increment Counter")
-        .SetCallback([&mainWindow]() {
-            mainWindow.GetState().counter++;
-        });
+        .SetCallback([](auto btn) {
+            const_cast<CounterState*>(btn.GetState())->counter++;
+        })
+        .SetLabel("Increment Counter");
 
     // 添加文本组件显示计数器
     mainWindow.AddComponent<Sharingan::TextComponent>()
-        .SetText([](const CounterState& state) {
+        .SetLabel([](const CounterState& state) {
             return "Counter: " + std::to_string(state.counter);
         })
         .SetVisible([](const CounterState& state){
@@ -122,60 +122,58 @@ int main(int, char **)
 
     // 添加复选框组件
     mainWindow.AddComponent<Sharingan::CheckboxComponent>()
-        .SetLabel("Show Counter")
-        .SetChecked(true)
-        .SetOnChangeCallback([&mainWindow](bool checked) {
-            mainWindow.GetState().showMessage = checked;
-        });
+        .SetValueRoute([](CounterState& state)->bool& { return state.showMessage; })
+        .SetOnChangeCallback([](auto _,bool __) {
+            std::cout<<"Checkbox changed"<<std::endl; 
+        })
+        .SetLabel("Show Counter");
+        
 
     // 添加浮点数滑块组件
     mainWindow.AddComponent<Sharingan::SliderFloatComponent>()
-        .SetLabel("Float Slider")
-        .SetValue(0.5f)
+        .SetValueRoute([](CounterState& state)->float& { return state.sliderValue; })
         .SetRange(0.0f, 1.0f)
-        .SetFormat("%.2f")
-        .SetOnChangeCallback([&mainWindow](float value) {
-            mainWindow.GetState().sliderValue = value;
-        });
+        .SetOnChangeCallback([](auto _, float value) {
+            std::cout<<"Slider value changed: "<<value<<std::endl;
+        })
+        .SetLabel("Float Slider");
 
     // 添加整数滑块组件
     mainWindow.AddComponent<Sharingan::SliderIntComponent>()
-        .SetLabel("Int Slider")
-        .SetValue(50)
+        .SetValueRoute([](CounterState& state)->int& { return state.sliderIntValue; })
         .SetRange(0, 100)
-        .SetOnChangeCallback([&mainWindow](int value) {
-            mainWindow.GetState().sliderIntValue = value;
-        });
+        .SetOnChangeCallback([](auto _,int value) {
+            std::cout<<"Slider value changed: "<<value<<std::endl;
+        })
+        .SetLabel("Int Slider");
 
     // 添加文本输入组件
     mainWindow.AddComponent<Sharingan::InputTextComponent>()
-        .SetLabel("Input Text")
-        .SetOnChangeCallback([&mainWindow](const std::string& text) {
-            mainWindow.GetState().inputText = text;
-        });
+        .SetValueRoute([](CounterState& state)->std::string& { return state.inputText; })
+        .SetOnChangeCallback([](auto _, const std::string& text) {
+            std::cout<<"Input text changed: "<<text<<std::endl;
+        })
+        .SetLabel("Input Text");
 
     // 添加下拉框组件
     mainWindow.AddComponent<Sharingan::ComboComponent>()
-        .SetLabel("Combo Box")
         .SetItems({"Option 1", "Option 2", "Option 3"})
-        .SetOnSelectCallback([&mainWindow](int index) {
-            mainWindow.GetState().selectedItem = index;
-        });
+        .SetLabel("Combo Box");
 
     // 添加颜色选择器组件
     mainWindow.AddComponent<Sharingan::ColorPickerComponent>()
-        .SetLabel("Color Picker")
-        .SetColor({1.0f, 0.0f, 0.0f, 1.0f})
-        .SetOnChangeCallback([&mainWindow](const std::array<float, 4>& color) {
-            mainWindow.GetState().color = color;
-        });
+        .SetValueRoute([](CounterState& state)->std::array<float, 4>& { return state.color; })
+        .SetLabel("Color Picker");
 
     // 添加进度条组件
-    auto progressBar = mainWindow.AddComponent<Sharingan::ProgressBarComponent>()
-        .SetLabel("Progress")
+    mainWindow.AddComponent<Sharingan::ProgressBarComponent>()
+        .SetFraction([](const CounterState& state) {
+            return state.progress;
+        })
         .SetOverlayText([](const CounterState& state) {
             return std::to_string(static_cast<int>(state.progress * 100)) + "%";
-        });
+        })
+        .SetLabel("Progress");
 
     // 主循环
     while (!glfwWindowShouldClose(window)) {
@@ -186,11 +184,12 @@ int main(int, char **)
         ImGui::NewFrame();
 
         // 更新进度条（示例：循环进度）
-        mainWindow.GetState().progress += 0.001f;
-        if (mainWindow.GetState().progress > 1.0f) {
-            mainWindow.GetState().progress = 0.0f;
+        static float progress = 0.0f;
+        progress += 0.01f;
+        if (progress > 1.0f) {
+            progress = 0.0f;
         }
-        progressBar.SetFraction(mainWindow.GetState().progress);
+        mainWindow.GetState().progress = progress;
 
         mainWindow.Draw();
 
