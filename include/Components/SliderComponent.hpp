@@ -1,82 +1,190 @@
 #ifndef SLIDERCOMPONENT_HPP
 #define SLIDERCOMPONENT_HPP
 
-#include "ImGuiDialogComponent.h"
-
+#include "WindowComponent.hpp"
 #include <imgui.h>
+#include <string>
+#include <functional>
+#include <algorithm>
+#include <utility>
 
-template <typename TState>
-class SliderFloatComponent : public ImGuiDialogComponent<TState>
+namespace Sharingan
 {
-    using typename ImGuiDialogComponent<TState>::StringProvider;
-    using Binder = typename ImGuiDialogComponent<TState>::template StateBinder<float>;
 
-  public:
-    explicit SliderFloatComponent(std::shared_ptr<TState> state, const std::string &title, Binder binder)
-        : SliderFloatComponent(state, title, binder, 0.0f, 100.0f)
-    {
-    }
-    explicit SliderFloatComponent(std::shared_ptr<TState> state, const std::string &title, Binder binder, float min,
-                                  float max)
-        : SliderFloatComponent(state, [title](auto _) { return title; }, binder, min, max)
+template<typename TState>
+class SliderFloatComponent : public WindowComponent<TState>
+{
+public:
+    SliderFloatComponent() : _label(""), _min(0.0f), _max(1.0f), _value(0.0f), _format("%.3f"), _onChangeCallback(nullptr), _visible(true)
     {
     }
 
-    explicit SliderFloatComponent(std::shared_ptr<TState> state, StringProvider title, Binder binder)
-        : SliderFloatComponent(state, title, binder, 0.0f, 100.0f)
+    explicit SliderFloatComponent(StringProvider label, float min = 0.0f, float max = 1.0f,
+                                std::function<void(float)> onChangeCallback = nullptr)
+        : _label(std::move(label))
+        , _min(min)
+        , _max(max)
+        , _value(0.0f)
+        , _format("%.3f")
+        , _onChangeCallback(std::move(onChangeCallback))
+        , _visible(true)
     {
     }
 
-    explicit SliderFloatComponent(std::shared_ptr<TState> state, StringProvider title, Binder binder, const float min,
-                                  const float max)
-        : _min(min), _max(max), _value(&binder(state)), _title(title), _state(state)
+    void Render() override
     {
+        if (_visible(this->_state)) {
+            if (ImGui::SliderFloat(_label(this->_state).c_str(), &_value, _min, _max, _format.c_str())) {
+                if (_onChangeCallback) {
+                    _onChangeCallback(_value);
+                }
+            }
+        }
     }
 
-    void Render() override { ImGui::SliderFloat(_title(_state).c_str(), _value, _min, _max); }
+    // 设置标签
+    SliderFloatComponent& SetLabel(const std::string& label) {
+        _label = StringProvider(label);
+        return *this;
+    }
 
-  private:
-    float _min, _max;
-    float *_value;
-    StringProvider _title;
-    std::shared_ptr<TState> _state;
+    SliderFloatComponent& SetLabel(std::function<std::string(const TState&)> stateFunc) {
+        _label = StringProvider(stateFunc);
+        return *this;
+    }
+
+    // 设置值
+    SliderFloatComponent& SetValue(float value) {
+        _value = std::clamp(value, _min, _max);
+        return *this;
+    }
+
+    // 设置范围
+    SliderFloatComponent& SetRange(float min, float max) {
+        _min = min;
+        _max = max;
+        _value = std::clamp(_value, _min, _max);
+        return *this;
+    }
+
+    // 设置格式
+    SliderFloatComponent& SetFormat(const std::string& format) {
+        _format = format;
+        return *this;
+    }
+
+    // 设置回调函数
+    SliderFloatComponent& SetOnChangeCallback(std::function<void(float)> callback) {
+        _onChangeCallback = std::move(callback);
+        return *this;
+    }
+
+    // 设置可见性
+    SliderFloatComponent& SetVisible(std::function<bool(const TState&)> stateFunc) {
+        _visible = ValueProvider<bool>(stateFunc);
+        return *this;
+    }
+
+    // 获取当前值
+    float GetValue() const { return _value; }
+
+private:
+    StringProvider _label;
+    float _value{0.0f};
+    float _min{0.0f};
+    float _max{1.0f};
+    std::string _format{"%.3f"};
+    std::function<void(float)> _onChangeCallback;
+    ValueProvider<bool> _visible{true};
 };
 
-template <typename TState>
-class SliderIntComponent : public ImGuiDialogComponent<TState>
+template<typename TState>
+class SliderIntComponent : public WindowComponent<TState>
 {
-    using typename ImGuiDialogComponent<TState>::StringProvider;
-    using Binder = typename ImGuiDialogComponent<TState>::template StateBinder<int>;
-
-  public:
-    explicit SliderIntComponent(std::shared_ptr<TState> state, const std::string &title, Binder binder)
-        : SliderIntComponent(state, title, binder, 0, 100)
-    {
-    }
-    explicit SliderIntComponent(std::shared_ptr<TState> state, const std::string &title, Binder binder, int min,
-                                int max)
-        : SliderIntComponent(state, [title](auto _) { return title; }, binder, min, max)
+public:
+    SliderIntComponent() : _label(""), _min(0), _max(100), _value(0), _format("%d"), _onChangeCallback(nullptr), _visible(true)
     {
     }
 
-    explicit SliderIntComponent(std::shared_ptr<TState> state, StringProvider title, Binder binder)
-        : SliderIntComponent(state, title, binder, 0, 100)
+    explicit SliderIntComponent(StringProvider label, int min = 0, int max = 100,
+                              std::function<void(int)> onChangeCallback = nullptr)
+        : _label(std::move(label))
+        , _min(min)
+        , _max(max)
+        , _value(0)
+        , _format("%d")
+        , _onChangeCallback(std::move(onChangeCallback))
+        , _visible(true)
     {
     }
 
-    explicit SliderIntComponent(std::shared_ptr<TState> state, StringProvider title, Binder binder, const float min,
-                                const float max)
-        : _min(min), _max(max), _value(&binder(state)), _title(title), _state(state)
+    void Render() override
     {
+        if (_visible(this->_state)) {
+            if (ImGui::SliderInt(_label(this->_state).c_str(), &_value, _min, _max, _format.c_str())) {
+                if (_onChangeCallback) {
+                    _onChangeCallback(_value);
+                }
+            }
+        }
     }
 
-    void Render() override { ImGui::SliderInt(_title(_state).c_str(), _value, _min, _max); }
+    // 设置标签
+    SliderIntComponent& SetLabel(const std::string& label) {
+        _label = StringProvider(label);
+        return *this;
+    }
 
-  private:
-    int _min, _max;
-    int *_value;
-    StringProvider _title;
-    std::shared_ptr<TState> _state;
+    SliderIntComponent& SetLabel(std::function<std::string(const TState&)> stateFunc) {
+        _label = StringProvider(stateFunc);
+        return *this;
+    }
+
+    // 设置值
+    SliderIntComponent& SetValue(int value) {
+        _value = std::clamp(value, _min, _max);
+        return *this;
+    }
+
+    // 设置范围
+    SliderIntComponent& SetRange(int min, int max) {
+        _min = min;
+        _max = max;
+        _value = std::clamp(_value, _min, _max);
+        return *this;
+    }
+
+    // 设置格式
+    SliderIntComponent& SetFormat(const std::string& format) {
+        _format = format;
+        return *this;
+    }
+
+    // 设置回调函数
+    SliderIntComponent& SetOnChangeCallback(std::function<void(int)> callback) {
+        _onChangeCallback = std::move(callback);
+        return *this;
+    }
+
+    // 设置可见性
+    SliderIntComponent& SetVisible(std::function<bool(const TState&)> stateFunc) {
+        _visible = ValueProvider<bool>(stateFunc);
+        return *this;
+    }
+
+    // 获取当前值
+    int GetValue() const { return _value; }
+
+private:
+    StringProvider _label;
+    int _value{0};
+    int _min{0};
+    int _max{100};
+    std::string _format{"%d"};
+    std::function<void(int)> _onChangeCallback;
+    ValueProvider<bool> _visible{true};
 };
+
+} // namespace Sharingan
 
 #endif // SLIDERCOMPONENT_HPP

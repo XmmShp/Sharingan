@@ -1,32 +1,83 @@
-#ifndef CHECKBOXCOMPONENT_H
-#define CHECKBOXCOMPONENT_H
+#ifndef CHECKBOXCOMPONENT_HPP
+#define CHECKBOXCOMPONENT_HPP
 
-#include "ImGuiDialogComponent.h"
-#include "imgui.h"
+#include "WindowComponent.hpp"
+#include <imgui.h>
+#include <string>
+#include <utility>
+#include <functional>
 
-template <typename TState>
-class CheckboxComponent : public ImGuiDialogComponent<TState>
+namespace Sharingan
 {
-    using typename ImGuiDialogComponent<TState>::StringProvider;
-    using Binder = typename ImGuiDialogComponent<TState>::template StateBinder<bool>;
-
-  public:
-    explicit CheckboxComponent(std::shared_ptr<TState> state, const std::string &title, Binder binder)
-        : CheckboxComponent(state, [title](auto _) { return title; }, binder)
+template<typename TState>
+class CheckboxComponent : public WindowComponent<TState>
+{
+public:
+    CheckboxComponent() : _label(""), _checked(false), _onChangeCallback(nullptr), _visible(true)
     {
     }
 
-    explicit CheckboxComponent(std::shared_ptr<TState> state, StringProvider title, Binder binder)
-        : _value(&binder(state)), _title(title), _state(state)
+    explicit CheckboxComponent(StringProvider label, std::function<void(bool)> onChangeCallback = nullptr)
+        : _label(std::move(label))
+        , _onChangeCallback(std::move(onChangeCallback))
     {
     }
 
-    void Render() override { ImGui::Checkbox(_title(_state).c_str(), _value); }
+    void Render() override
+    {
+        if (_visible(this->_state)) {
+            if (ImGui::Checkbox(_label(this->_state).c_str(), &_checked)) {
+                if (_onChangeCallback) {
+                    _onChangeCallback(_checked);
+                }
+            }
+        }
+    }
 
-  private:
-    bool *_value;
-    StringProvider _title;
-    std::shared_ptr<TState> _state;
+    // 设置标签
+    CheckboxComponent& SetLabel(const std::string& label) {
+        _label = StringProvider(label);
+        return *this;
+    }
+
+    CheckboxComponent& SetLabel(std::function<std::string(const TState&)> stateFunc) {
+        _label = StringProvider(stateFunc);
+        return *this;
+    }
+
+    // 设置选中状态
+    CheckboxComponent& SetChecked(bool checked) {
+        _checked = checked;
+        return *this;
+    }
+
+    // 设置回调函数
+    CheckboxComponent& SetOnChangeCallback(std::function<void(bool)> callback) {
+        _onChangeCallback = std::move(callback);
+        return *this;
+    }
+
+    // 设置可见性
+    CheckboxComponent& SetVisible(bool visible) {
+        _visible = ValueProvider<bool>(visible);
+        return *this;
+    }
+
+    CheckboxComponent& SetVisible(std::function<bool(const TState&)>& stateFunc) {
+        _visible = ValueProvider<bool>(stateFunc);
+        return *this;
+    }
+
+    // 获取当前状态
+    bool IsChecked() const { return _checked; }
+
+private:
+    StringProvider _label;
+    bool _checked{false};
+    std::function<void(bool)> _onChangeCallback;
+    ValueProvider<bool> _visible{true};
 };
 
-#endif // CHECKBOXCOMPONENT_H
+} // namespace Sharingan
+
+#endif // CHECKBOXCOMPONENT_HPP
