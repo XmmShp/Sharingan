@@ -1,14 +1,15 @@
 #ifndef BUTTONCOMPONENT_HPP
 #define BUTTONCOMPONENT_HPP
 
-#include "ImGuiDialogComponent.h"
+#include "WindowComponent.hpp"
 #include <imgui.h>
 #include <string>
 #include <utility>
 #include <functional>
 
-template <typename TState>
-class ButtonComponent : public ImGuiDialogComponent<TState>
+namespace Sharingan
+{
+class ButtonComponent : public WindowComponent
 {
 template<typename TState>
 class ButtonComponent : public WindowComponent<TState>
@@ -44,7 +45,6 @@ public:
 private:
     StringProvider _title{""};  // 默认空字符串
     Callback _callback;
-    std::shared_ptr<TState> _state;
 };
 
 } // namespace Sharingan
