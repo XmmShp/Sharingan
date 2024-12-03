@@ -11,47 +11,55 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(OpenGL REQUIRED)
 
 # Try to find system GLFW first
-find_package(glfw3 QUIET)
+if(NOT TARGET glfw)
+    find_package(glfw3 QUIET)
 
-if(NOT glfw3_FOUND)
-    message(STATUS "System GLFW not found, using bundled version")
-    # Setup GLFW
-    option(GLFW_BUILD_DOCS OFF)
-    option(GLFW_BUILD_TESTS OFF)
-    option(GLFW_BUILD_EXAMPLES OFF)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw")
+    if(NOT glfw3_FOUND)
+        message(STATUS "System GLFW not found, using bundled version")
+        # Setup GLFW
+        option(GLFW_BUILD_DOCS OFF)
+        option(GLFW_BUILD_TESTS OFF)
+        option(GLFW_BUILD_EXAMPLES OFF)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw")
+    else()
+        message(STATUS "Using system GLFW")
+    endif()
 else()
-    message(STATUS "Using system GLFW")
+    message(STATUS "GLFW target already exists, skipping GLFW setup")
 endif()
 
 # Try to find system ImGui (if packaged by system)
-find_package(imgui QUIET)
+if(NOT TARGET imgui)
+    find_package(imgui QUIET)
 
-if(NOT imgui_FOUND)
-    message(STATUS "System ImGui not found, using bundled version")
-    # Setup ImGui
-    set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui")
-    add_library(imgui STATIC)
+    if(NOT imgui_FOUND)
+        message(STATUS "System ImGui not found, using bundled version")
+        # Setup ImGui
+        set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui")
+        add_library(imgui STATIC)
 
-    file(GLOB IMGUI_SOURCES 
-        "${IMGUI_PATH}/*.cpp"
-        "${IMGUI_PATH}/backends/imgui_impl_glfw.cpp"
-        "${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp"
-    )
+        file(GLOB IMGUI_SOURCES 
+            "${IMGUI_PATH}/*.cpp"
+            "${IMGUI_PATH}/backends/imgui_impl_glfw.cpp"
+            "${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp"
+        )
 
-    target_sources(imgui PRIVATE ${IMGUI_SOURCES})
-    target_include_directories(imgui PUBLIC 
-        "${IMGUI_PATH}"
-        "${IMGUI_PATH}/backends"
-    )
+        target_sources(imgui PRIVATE ${IMGUI_SOURCES})
+        target_include_directories(imgui PUBLIC 
+            "${IMGUI_PATH}"
+            "${IMGUI_PATH}/backends"
+        )
 
-    # Link ImGui dependencies
-    target_link_libraries(imgui PUBLIC 
-        glad
-        glfw
-    )
+        # Link ImGui dependencies
+        target_link_libraries(imgui PUBLIC 
+            glad
+            glfw
+        )
+    else()
+        message(STATUS "Using system ImGui")
+    endif()
 else()
-    message(STATUS "Using system ImGui")
+    message(STATUS "ImGui target already exists, skipping ImGui setup")
 endif()
 
 # Setup GLAD
