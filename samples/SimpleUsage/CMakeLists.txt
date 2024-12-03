@@ -1,20 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
-
 project(Sharingan_Example_SimpleUsage LANGUAGES C CXX)
-
-add_subdirectory("../../" "./_external/Sharingan")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(Sharingan_Example_SimpleUsage)
-FILE(GLOB_RECURSE Sharingan_Example_SimpleUsage_SOURCES "./src/*.cpp")
+# Add the main project
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../" "${CMAKE_CURRENT_BINARY_DIR}/_deps/sharingan")
 
-target_sources(Sharingan_Example_SimpleUsage PUBLIC ${Sharingan_Example_SimpleUsage_SOURCES})
-target_link_libraries(Sharingan_Example_SimpleUsage Sharingan)
+# Create executable
+add_executable(${PROJECT_NAME})
 
-add_subdirectory("../dependencies/glfw" "./_external/glfw")
-target_link_libraries(Sharingan_Example_SimpleUsage glfw)
+# Add source files
+file(GLOB_RECURSE PROJECT_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
 
-add_subdirectory("../dependencies/glad" "./_external/glad")
-target_link_libraries(Sharingan_Example_SimpleUsage glad)
+# Link with Sharingan library
+target_link_libraries(${PROJECT_NAME} PRIVATE Sharingan)
