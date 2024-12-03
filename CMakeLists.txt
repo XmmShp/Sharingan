@@ -10,6 +10,50 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Find required packages
 find_package(OpenGL REQUIRED)
 
+# Try to find system GLFW first
+find_package(glfw3 QUIET)
+
+if(NOT glfw3_FOUND)
+    message(STATUS "System GLFW not found, using bundled version")
+    # Setup GLFW
+    option(GLFW_BUILD_DOCS OFF)
+    option(GLFW_BUILD_TESTS OFF)
+    option(GLFW_BUILD_EXAMPLES OFF)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw")
+else()
+    message(STATUS "Using system GLFW")
+endif()
+
+# Try to find system ImGui (if packaged by system)
+find_package(imgui QUIET)
+
+if(NOT imgui_FOUND)
+    message(STATUS "System ImGui not found, using bundled version")
+    # Setup ImGui
+    set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui")
+    add_library(imgui STATIC)
+
+    file(GLOB IMGUI_SOURCES 
+        "${IMGUI_PATH}/*.cpp"
+        "${IMGUI_PATH}/backends/imgui_impl_glfw.cpp"
+        "${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp"
+    )
+
+    target_sources(imgui PRIVATE ${IMGUI_SOURCES})
+    target_include_directories(imgui PUBLIC 
+        "${IMGUI_PATH}"
+        "${IMGUI_PATH}/backends"
+    )
+
+    # Link ImGui dependencies
+    target_link_libraries(imgui PUBLIC 
+        glad
+        glfw
+    )
+else()
+    message(STATUS "Using system ImGui")
+endif()
+
 # Setup GLAD
 add_library(glad STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/src/glad.c"
@@ -18,34 +62,6 @@ target_include_directories(glad PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glad/include"
 )
 target_link_libraries(glad PUBLIC OpenGL::GL)
-
-# Setup GLFW
-option(GLFW_BUILD_DOCS OFF)
-option(GLFW_BUILD_TESTS OFF)
-option(GLFW_BUILD_EXAMPLES OFF)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/glfw")
-
-# Setup ImGui
-set(IMGUI_PATH "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/imgui")
-add_library(imgui STATIC)
-
-file(GLOB IMGUI_SOURCES 
-    "${IMGUI_PATH}/*.cpp"
-    "${IMGUI_PATH}/backends/imgui_impl_glfw.cpp"
-    "${IMGUI_PATH}/backends/imgui_impl_opengl3.cpp"
-)
-
-target_sources(imgui PRIVATE ${IMGUI_SOURCES})
-target_include_directories(imgui PUBLIC 
-    "${IMGUI_PATH}"
-    "${IMGUI_PATH}/backends"
-)
-
-# Link ImGui dependencies
-target_link_libraries(imgui PUBLIC 
-    glad
-    glfw
-)
 
 # Setup main library
 add_library(${PROJECT_NAME} INTERFACE)
